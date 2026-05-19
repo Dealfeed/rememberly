@@ -1,133 +1,187 @@
-export default function RememberlyApp() {
-  const reminders = [
-    {
-      id: 1,
-      title: 'Team Meeting',
-      time: '09:00 AM',
-      description: 'Weekly product sync with the design team.',
-      completed: false,
-    },
-    {
-      id: 2,
-      title: 'Pay Electricity Bill',
-      time: '06:00 PM',
-      description: 'Monthly utility payment reminder.',
-      completed: true,
-    },
-    {
-      id: 3,
-      title: 'Call Mum',
-      time: '08:30 PM',
-      description: 'Catch up and check in.',
-      completed: false,
-    },
-  ];
+import { useEffect, useState } from 'react'
+import { supabase } from './lib/supabase'
 
-  return (
-    <div className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex flex-col gap-4 rounded-3xl bg-white p-8 shadow-lg md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900">Rememberly</h1>
-            <p className="mt-2 text-slate-600">
-              Smart reminders, tasks, and daily planning in one place.
-            </p>
+export default function App() {
+  const [session, setSession] = useState(null)
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const [recipientName, setRecipientName] = useState('')
+  const [recipientEmail, setRecipientEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const [deliverAt, setDeliverAt] = useState('')
+  const [futureMessages, setFutureMessages] = useState([])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      if (session) fetchFutureMessages()
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session)
+        if (session) fetchFutureMessages()
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function signIn() {
+    setLoading(true)
+    const { error } = await supabase.auth.signInWithOtp({ email })
+    if (error) alert(error.message)
+    else alert('Check your email 💌')
+    setLoading(false)
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    setFutureMessages([])
+  }
+
+  async function fetchFutureMessages() {
+    const { data, error } = await supabase
+      .from('future_messages')
+      .select('*')
+      .order('deliver_at', { ascending: true })
+
+    if (error) alert(error.message)
+    else setFutureMessages(data)
+  }
+
+  async function saveFutureMessage() {
+    if (!recipientName || !recipientEmail || !message || !deliverAt) {
+      alert('Fill in all the boxes first')
+      return
+    }
+
+    const { error } = await supabase.from('future_messages').insert({
+      user_id: session.user.id,
+      recipient_name: recipientName,
+      recipient_email: recipientEmail,
+      message,
+      deliver_at: deliverAt,
+    })
+
+    if (error) {
+      alert(error.message)
+    } else {
+      alert('Future message saved 💌')
+      setRecipientName('')
+      setRecipientEmail('')
+      setMessage('')
+      setDeliverAt('')
+      fetchFutureMessages()
+    }
+  }
+
+  async function deleteFutureMessage(id) {
+    const { error } = await supabase
+      .from('future_messages')
+      .delete()
+      .eq('id', id)
+
+    if (error) alert(error.message)
+    else fetchFutureMessages()
+  }
+
+  if (session) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#f8f4ee', padding: '24px', fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ maxWidth: '520px', margin: '0 auto' }}>
+          <h1>Rememberly ✨</h1>
+          <p>Welcome back.</p>
+
+          <div style={{ background: 'white', padding: '24px', borderRadius: '24px', marginTop: '24px' }}>
+            <h2>Future Messages</h2>
+            <p>Write something meaningful for later.</p>
+
+            <input placeholder="Recipient name" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} style={inputStyle} />
+            <input type="email" placeholder="Recipient email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} style={inputStyle} />
+            <textarea placeholder="Write a future message..." value={message} onChange={(e) => setMessage(e.target.value)} style={{ ...inputStyle, minHeight: '120px' }} />
+            <input type="datetime-local" value={deliverAt} onChange={(e) => setDeliverAt(e.target.value)} style={inputStyle} />
+
+            <button onClick={saveFutureMessage} style={primaryButton}>
+              Save future message
+            </button>
           </div>
 
-          <button className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:scale-105">
-            + Create Reminder
-          </button>
-        </div>
+          <div style={{ marginTop: '24px' }}>
+            <h2>Saved Messages</h2>
 
-        <div className="mb-8 grid gap-6 md:grid-cols-3">
-          <div className="rounded-3xl bg-white p-6 shadow-md">
-            <p className="text-sm text-slate-500">Active Reminders</p>
-            <h2 className="mt-2 text-4xl font-bold">12</h2>
-          </div>
-
-          <div className="rounded-3xl bg-white p-6 shadow-md">
-            <p className="text-sm text-slate-500">Completed Today</p>
-            <h2 className="mt-2 text-4xl font-bold">7</h2>
-          </div>
-
-          <div className="rounded-3xl bg-white p-6 shadow-md">
-            <p className="text-sm text-slate-500">Upcoming Events</p>
-            <h2 className="mt-2 text-4xl font-bold">4</h2>
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-white p-6 shadow-lg">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-2xl font-semibold text-slate-900">
-              Today’s Reminders
-            </h2>
-
-            <input
-              type="text"
-              placeholder="Search reminders..."
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-black md:w-72"
-            />
-          </div>
-
-          <div className="space-y-4">
-            {reminders.map((reminder) => (
-              <div
-                key={reminder.id}
-                className="flex flex-col gap-4 rounded-2xl border border-slate-200 p-5 transition hover:shadow-md md:flex-row md:items-center md:justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {reminder.title}
-                    </h3>
-
-                    {reminder.completed ? (
-                      <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                        Completed
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
-                        Pending
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-2 text-sm text-slate-600">
-                    {reminder.description}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
-                    {reminder.time}
-                  </div>
-
-                  <button className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-100">
-                    Edit
+            {futureMessages.length === 0 ? (
+              <p>No future messages yet.</p>
+            ) : (
+              futureMessages.map((item) => (
+                <div key={item.id} style={messageCard}>
+                  <strong>Future message for {item.recipient_name}</strong>
+                  <p>{item.message}</p>
+                  <small>{new Date(item.deliver_at).toLocaleString()}</small>
+                  <br />
+                  <button onClick={() => deleteFutureMessage(item.id)} style={deleteButton}>
+                    Delete
                   </button>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
+
+          <button onClick={signOut} style={{ ...primaryButton, marginTop: '24px' }}>
+            Sign out
+          </button>
         </div>
+      </main>
+    )
+  }
 
-        <div className="mt-8 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-700 p-8 text-white shadow-xl">
-          <h2 className="text-2xl font-bold">AI Reminder Assistant</h2>
-          <p className="mt-2 max-w-2xl text-slate-200">
-            Automatically schedule reminders from messages, emails, and voice notes.
-          </p>
+  return (
+    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f8f4ee', padding: '24px', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ width: '100%', maxWidth: '420px', background: 'white', padding: '32px', borderRadius: '32px' }}>
+        <p style={{ color: '#8d765f', fontWeight: '700' }}>Rememberly</p>
+        <h1>Remember the people who matter.</h1>
 
-          <div className="mt-6 flex flex-wrap gap-4">
-            <button className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-105">
-              Enable AI Features
-            </button>
+        <input placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
 
-            <button className="rounded-2xl border border-white/30 px-6 py-3 text-sm font-semibold transition hover:bg-white/10">
-              Connect Calendar
-            </button>
-          </div>
-        </div>
+        <button onClick={signIn} disabled={loading} style={primaryButton}>
+          {loading ? 'Loading...' : 'Continue'}
+        </button>
       </div>
-    </div>
-  );
+    </main>
+  )
+}
+
+const inputStyle = {
+  width: '100%',
+  padding: '14px',
+  borderRadius: '14px',
+  border: '1px solid #ddd',
+  marginBottom: '12px',
+}
+
+const primaryButton = {
+  width: '100%',
+  padding: '14px',
+  borderRadius: '999px',
+  border: 'none',
+  background: '#2b2b2b',
+  color: 'white',
+  fontWeight: '700',
+}
+
+const messageCard = {
+  background: 'white',
+  padding: '24px',
+  borderRadius: '28px',
+  marginBottom: '16px',
+  boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
+}
+
+const deleteButton = {
+  marginTop: '12px',
+  padding: '10px 16px',
+  borderRadius: '999px',
+  border: 'none',
+  background: '#f3eee7',
 }
