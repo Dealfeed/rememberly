@@ -182,3 +182,38 @@
     border-right-color: var(--border);
   }
 }
+body.dark-mode {
+  background: #111111;
+}
+
+body.dark-mode main {
+  background: #111111 !important;
+}
+
+body.dark-mode div {
+  color: white;
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background: #111111 !important;
+  color: white !important;
+  border: 1px solid #3a3a3a !important;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #9ca3af !important;
+}
+input,
+textarea,
+select {
+  background: white !important;
+  color: #111111 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280 !important;
+}

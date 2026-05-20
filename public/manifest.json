@@ -1,0 +1,17 @@
+{
+  "name": "Rememberly",
+  "short_name": "Rememberly",
+  "description": "Remember the people who matter.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f4ee",
+  "theme_color": "#f8f4ee",
+  "orientation": "portrait",
+  "icons": [
+  {
+    "src": "/icon.png",
+    "sizes": "1024x1024",
+    "type": "image/png"
+  }
+]
+}
