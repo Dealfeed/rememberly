@@ -216,4 +216,23 @@ select {
 input::placeholder,
 textarea::placeholder {
   color: #6b7280 !important;
+* {
+  color: #111111;
+}
+
+input,
+textarea,
+select {
+  background: white !important;
+  color: #111111 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #555555 !important;
+}
+
+button {
+  color: inherit;
+}
 }
