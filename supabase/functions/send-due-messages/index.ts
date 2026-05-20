@@ -26,11 +26,13 @@ serve(async () => {
     await resend.emails.send({
       from: 'Rememberly <onboarding@resend.dev>',
       to: message.recipient_email,
-      subject: `A message from Rememberly 💌`,
+      subject: message.subject || 'Scheduled message',
+      text: message.message,
       html: `
-        <div style="font-family:sans-serif;padding:24px;">
-          <h2>A future message arrived 💌</h2>
-          <p>${message.message}</p>
+        <div style="font-family: Arial, sans-serif; padding: 24px; color: #222;">
+          <p style="font-size: 16px; line-height: 1.6; white-space: pre-line;">
+            ${message.message}
+          </p>
         </div>
       `,
     })

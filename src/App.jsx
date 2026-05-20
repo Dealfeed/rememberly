@@ -9,6 +9,7 @@ export default function App() {
   const [recipientName, setRecipientName] = useState('')
   const [recipientEmail, setRecipientEmail] = useState('')
   const [message, setMessage] = useState('')
+  const [subject, setSubject] = useState('')
   const [deliverAt, setDeliverAt] = useState('')
   const [futureMessages, setFutureMessages] = useState([])
 
@@ -30,7 +31,12 @@ export default function App() {
 
   async function signIn() {
     setLoading(true)
-    const { error } = await supabase.auth.signInWithOtp({ email })
+const { error } = await supabase.auth.signInWithOtp({
+  email,
+  options: {
+    emailRedirectTo: window.location.origin,
+  },
+})
     if (error) alert(error.message)
     else alert('Check your email 💌')
     setLoading(false)
@@ -61,8 +67,9 @@ export default function App() {
       user_id: session.user.id,
       recipient_name: recipientName,
       recipient_email: recipientEmail,
-      message,
-      deliver_at: deliverAt,
+      subject,
+message,
+deliver_at: deliverAt,
     })
 
     if (error) {
@@ -71,6 +78,7 @@ export default function App() {
       alert('Future message saved 💌')
       setRecipientName('')
       setRecipientEmail('')
+      setSubject('')
       setMessage('')
       setDeliverAt('')
       fetchFutureMessages()
@@ -100,7 +108,19 @@ export default function App() {
 
             <input placeholder="Recipient name" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} style={inputStyle} />
             <input type="email" placeholder="Recipient email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} style={inputStyle} />
-            <textarea placeholder="Write a future message..." value={message} onChange={(e) => setMessage(e.target.value)} style={{ ...inputStyle, minHeight: '120px' }} />
+<input
+  placeholder="Email subject"
+  value={subject}
+  onChange={(e) => setSubject(e.target.value)}
+  style={inputStyle}
+/>
+
+<textarea
+  placeholder="Write a future message..."
+  value={message}
+  onChange={(e) => setMessage(e.target.value)}
+  style={{ ...inputStyle, minHeight: '120px' }}
+/>
             <input type="datetime-local" value={deliverAt} onChange={(e) => setDeliverAt(e.target.value)} style={inputStyle} />
 
             <button onClick={saveFutureMessage} style={primaryButton}>
